@@ -1,7 +1,10 @@
 # HeatMap
-The class for heat (temperature) maps generation
+The class for heat (temperature) maps generation. It can be used for overlays on maps for example. [Live example](https://квартиры-домики.рф/Карта-цен).
 
-Using:
+
+
+# Using:
+```C#
     class Program
     {
         static void Main(string[] args)
@@ -24,8 +27,12 @@ Using:
             bitmap.Save("TestMapResult.png");
         }
     }
+```
+
+Test points used in example:
 
 ![Test Points](https://raw.githubusercontent.com/d-sky/HeatMap/master/TestMapPoints.png)
+
+The result:
+
 ![Result](https://raw.githubusercontent.com/d-sky/HeatMap/master/TestMapResult.png)
-
-
