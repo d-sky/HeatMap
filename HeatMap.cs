@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
@@ -6,6 +6,7 @@ using System.Drawing;
 public class HeatMap
 {
     public List<PointWithValue> Points;
+    public List<RGB> Colors;
     public HeatMapLimits Limits;
     public int Width;
     public int Height;
@@ -25,7 +26,6 @@ public class HeatMap
             else Colors = null;
         }
     }
-    public List<RGB> Colors;
 
     public HeatMap()
     {
@@ -55,42 +55,13 @@ public class HeatMap
 
     int CrossProduct(HeatMapPoint o, HeatMapPoint a, HeatMapPoint b)
     {
-        return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-    }
-
-    bool IsPointInPolygon(HeatMapPoint point, List<HeatMapPoint> vs)
-    {
-        int x = point.x,
-            y = point.y;
-        bool inside = false;
-        int i = 0,
-            j = 0,
-            xi = 0,
-            xj = 0,
-            yi = 0,
-            yj = 0;
-        bool intersect = false;
-
-        j = vs.Count - 1;
-        for (i = 0; i < vs.Count; i = i + 1)
-        {
-            xi = vs[i].x;
-            yi = vs[i].y;
-            xj = vs[j].x;
-            yj = vs[j].y;
-
-            intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-            if (intersect) { inside = !inside; }
-            j = i;
-        }
-
-        return inside;
+        return (a.X - o.X) * (b.Y - o.Y) - (a.Y - o.Y) * (b.X - o.X);
     }
 
     int SquareDistance(HeatMapPoint p0, HeatMapPoint p1)
     {
-        int x = p0.x - p1.x,
-            y = p0.y - p1.y;
+        int x = p0.X - p1.X,
+            y = p0.Y - p1.Y;
 
         return x * x + y * y;
     }
@@ -126,7 +97,7 @@ public class HeatMap
 
     RGB HSL2RGB(double h, double s, double l, double a = 1)
     {
-        double r, g, b, q, p;
+        double r, g, b;
 
         if (s == 0)
         {
@@ -134,52 +105,47 @@ public class HeatMap
         }
         else
         {
-            q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            p = 2 * l - q;
+            double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            double p = 2 * l - q;
             r = HUE2RGB(p, q, h + 0.333);
             g = HUE2RGB(p, q, h);
             b = HUE2RGB(p, q, h - 0.333);
         }
-        var result = new RGB((int)(r * 255) | 0, (int)(g * 255) | 0, (int)(b * 255) | 0, (int)(a * 255)); // (x << 0) = Math.floor(x)
-        if (result.r > 255) result.r = 255;
-        if (result.g > 255) result.g = 255;
-        if (result.b > 255) result.b = 255;
-        if (result.a > 255) result.a = 255;
-        return result;
+        var Result = new RGB((int)(r * 255) | 0, (int)(g * 255) | 0, (int)(b * 255) | 0, (int)(a * 255));
+        if (Result.R > 255) Result.R = 255;
+        if (Result.G > 255) Result.G = 255;
+        if (Result.B > 255) Result.B = 255;
+        if (Result.A > 255) Result.A = 255;
+
+        return Result;
     }
 
     public HSL GetHSLColor(double value)
     {
-        double val = value,
-            tmp = 0,
-            lim = ColorLimit,//0.35,
-            min = MinValue,
-            max = MaxValue,
-            dif = max - min,
-            lvs = NumberOfLevels;
+        double temperature = 0,
+            diff = MaxValue - MinValue;
 
-        if (val < min)
+        if (value < MinValue)
         {
-            val = min;
+            value = MinValue;
         }
-        if (val > max)
+        if (value > MaxValue)
         {
-            val = max;
+            value = MaxValue;
         }
 
-        tmp = 1 - (1 - lim) - (((val - min) * lim) / dif);
-
-        double a = 1;
+        temperature = 1 - (1 - ColorLimit) - (((value - MinValue) * ColorLimit) / diff);
 
         if (LevelsEnabled)
         {
-            tmp = Math.Round(tmp * lvs) / lvs;
+            temperature = Math.Round(temperature * NumberOfLevels) / NumberOfLevels;
         }
 
         double l = 0.5;
         double s = 1;
+        double a = 1;
 
-        return new HSL() { h = tmp, s = s, l = l, a = a };
+        return new HSL() { H = temperature, S = s, L = l, A = a };
     }
 
     public RGB GetRGBColor(double value)
@@ -188,7 +154,7 @@ public class HeatMap
         {
             var hsl = GetHSLColor(value);
 
-            return HSL2RGB(hsl.h, hsl.s, hsl.l, hsl.a);
+            return HSL2RGB(hsl.H, hsl.S, hsl.L, hsl.A);
         }
         else
         {
@@ -202,63 +168,57 @@ public class HeatMap
 
     double GetPointValue(int limit, PointWithValue point)
     {
-        int counter = 0;
-        List<Tuple<int, int>> arr = new List<Tuple<int, int>>();
-        int dis = 0;
+        List<Tuple<int, int>> pointsWithDistance = new List<Tuple<int, int>>();
+        int distance = 0;
         double inv = 0.0,
                 t = 0.0,
                 b = 0.0;
-        int pwr = 2;
-        Tuple<int, int> ptr;
 
-
-        for (counter = 0; counter < this.Points.Count; counter = counter + 1)
+        for (int i = 0; i < this.Points.Count; i++)
         {
-            dis = SquareDistance(point, this.Points[counter]);
-            if (dis == 0)
+            distance = SquareDistance(point, this.Points[i]);
+            if (distance == 0)
             {
-                return this.Points[counter].value;
+                return this.Points[i].Value;
             }
-            arr.Insert(counter, new Tuple<int, int>(dis, counter));
+            pointsWithDistance.Insert(i, new Tuple<int, int>(distance, i));
         }
 
-        arr = arr.OrderBy(a => a.Item1).ToList();
+        pointsWithDistance = pointsWithDistance.OrderBy(a => a.Item1).ToList();
 
-        for (counter = 0; counter < limit; counter = counter + 1)
+        for (int i = 0; i < limit; i++)
         {
-            ptr = arr[counter];
-            inv = 1 / Math.Pow(ptr.Item1, pwr);
-            t = t + inv * this.Points[ptr.Item2].value;
+            var P = pointsWithDistance[i];
+            inv = 1 / Math.Pow(P.Item1, 2);
+            t = t + inv * this.Points[P.Item2].Value;
             b = b + inv;
         }
 
         return t / b;
-
     }
 
     public Bitmap Draw()
     {
-        Bitmap img = new Bitmap(this.Width, this.Height);
+        Bitmap result = new Bitmap(Width, Height);
 
         if (Limits.xMax == 0 && Limits.xMin == 0 && Limits.yMax == 0 && Limits.yMin == 0)
         {
-            this.Limits = new HeatMapLimits { xMin = 0, xMax = this.Width, yMin = 0, yMax = this.Height };
+            this.Limits = new HeatMapLimits { xMin = 0, xMax = Width, yMin = 0, yMax = Height };
         }
 
         int x = Limits.xMin;
         int y = Limits.yMin;
         int w = Width;
         int wy = w * y;
-        int lim = Points.Count;
-        double val = 0.0;
-        int xBeg = Limits.xMin;
+        int pointsLimit = Points.Count;
+        int xStart = Limits.xMin;
         int xEnd = Limits.xMax;
         int yEnd = Limits.yMax;
         bool isEmpty = true;
 
         while (y < yEnd)
         {
-            val = GetPointValue(lim, new PointWithValue() { x = x, y = y });
+            var val = GetPointValue(pointsLimit, new PointWithValue() { X = x, Y = y });
 
             if (val != -255)
             {
@@ -271,33 +231,34 @@ public class HeatMap
                 {
                     var col = GetRGBColor(val);
 
-                    var imgCol = Color.FromArgb(col.a, col.r, col.g, col.b);
+                    var imgCol = Color.FromArgb(col.A, col.R, col.G, col.B);
 
-                    img.SetPixel(imgX, imgY, imgCol);
+                    result.SetPixel(imgX, imgY, imgCol);
                 }
             }
             x = x + 1;
             if (x > xEnd)
             {
-                x = xBeg;
+                x = xStart;
                 y = y + 1;
                 wy = w * y;
             }
         }
         if (isEmpty) return null;
-        return img;
+
+        return result;
     }
 }
 
 public class HeatMapPoint
 {
-    public int x;
-    public int y;
+    public int X;
+    public int Y;
 }
 
 public class PointWithValue : HeatMapPoint
 {
-    public double value;
+    public double Value;
 }
 
 public class HeatMapLimits
@@ -312,22 +273,22 @@ public class RGB
 {
     public RGB(int r, int g, int b, int a = 255)
     {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
+        R = r;
+        G = g;
+        B = b;
+        A = a;
     }
 
-    public int r;
-    public int g;
-    public int b;
-    public int a;
+    public int R;
+    public int G;
+    public int B;
+    public int A;
 }
 
 public class HSL
 {
-    public double h;
-    public double s;
-    public double l;
-    public double a;
+    public double H;
+    public double S;
+    public double L;
+    public double A;
 }
