@@ -25,6 +25,7 @@ Using:
         }
     }
 
-[!(https://raw.githubusercontent.com/d-sky/HeatMap/master/TestMapResult.png)]
+![Test Points](https://raw.githubusercontent.com/d-sky/HeatMap/master/TestMapPoints.png)
+![Result](https://raw.githubusercontent.com/d-sky/HeatMap/master/TestMapResult.png)
 
-https://raw.githubusercontent.com/d-sky/HeatMap/master/TestMapPoints.png
+
