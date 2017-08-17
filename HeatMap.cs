@@ -158,10 +158,20 @@ public class HeatMap
         }
         else
         {
-            var v = value < 0 ? Math.Abs(MinValue) - Math.Abs(value) : value + Math.Abs(MaxValue);
-            var maxV = Math.Abs(MaxValue) + Math.Abs(MinValue);
-            int index = (int)(v * (Colors.Count) / maxV);
+            int index = 0;
+            if (MinValue < 0)
+            {
+                var v = value < 0 ? Math.Abs(MinValue) - Math.Abs(value) : value + Math.Abs(MaxValue);
+                var maxV = Math.Abs(MaxValue) + Math.Abs(MinValue);
+                index = (int)(v * (Colors.Count) / maxV);
+            }
+            else
+            {
+                index = (int)(value * Colors.Count / MaxValue);
+            }
+
             if (index == Colors.Count) index--;
+
             return Colors[index];
         }
     }
