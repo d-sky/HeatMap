@@ -7,12 +7,12 @@ The class for heat (temperature) maps generation. It can be used for overlays on
 ```C#
 //Test points with values from -100 to 100
 List<PointWithValue> pnts = new List<PointWithValue>();
-pnts.Add(new PointWithValue() { x = 50, y = 50, value = -100 });
-pnts.Add(new PointWithValue() { x = 250, y = 25, value = 45 });
-pnts.Add(new PointWithValue() { x = 450, y = 125, value = 10 });
-pnts.Add(new PointWithValue() { x = 25, y = 300, value = -50 });
-pnts.Add(new PointWithValue() { x = 250, y = 350, value = 0 });
-pnts.Add(new PointWithValue() { x = 410, y = 410, value = 100 });
+pnts.Add(new PointWithValue() { X = 50, Y = 50, Value = -100 });
+pnts.Add(new PointWithValue() { X = 250, Y = 25, Value = 45 });
+pnts.Add(new PointWithValue() { X = 450, Y = 125, Value = 10 });
+pnts.Add(new PointWithValue() { X = 25, Y = 300, Value = -50 });
+pnts.Add(new PointWithValue() { X = 250, Y = 350, Value = 0 });
+pnts.Add(new PointWithValue() { X = 410, Y = 410, Value = 100 });
 
 HeatMap hm = new HeatMap();
 hm.Points = pnts;
